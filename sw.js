@@ -9,6 +9,36 @@ self.addEventListener('install', function (event) {
    * TODO - Part 2 Step 2
    * Create a function as outlined above
    */
+   event.waitUntil(
+    caches.open(CACHE_NAME)
+      .then(function(cache) {
+        console.log("Opened cache");
+        return cache.addAll( [
+          'https://introweb.tech/assets/json/ghostCookies.json',
+          'https://introweb.tech/assets/json/birthdayCake.json',
+          'https://introweb.tech/assets/json/chocolateChip.json',
+          'https://introweb.tech/assets/json/stuffing.json',
+          'https://introweb.tech/assets/json/turkey.json',
+          'https://introweb.tech/assets/json/pumpkinPie.json',
+          'index.html',
+          'favicon.ico',
+          'assets/styles/main.css',
+          'assets/scripts/Router.js',
+          'assets/scripts/main.js',
+          'assets/components/RecipeCard.js',
+          'assets/components/RecipeExpand.js',
+          'assets/images/icons/0-star.svg',
+          'assets/images/icons/1-star.svg',
+          'assets/images/icons/2-star.svg',
+          'assets/images/icons/3-star.svg',
+          'assets/images/icons/4-star.svg',
+          'assets/images/icons/5-star.svg',
+          'assets/images/icons/arrow-down.png',
+          '.vscode/settings.json'
+        ]);
+      })
+  );
+
 });
 
 /**
@@ -21,6 +51,18 @@ self.addEventListener('activate', function (event) {
    * TODO - Part 2 Step 3
    * Create a function as outlined above, it should be one line
    */
+   event.waitUntil(
+    caches.keys().then(function(cacheNames) {
+      return Promise.all(
+        cacheNames.map(function(cacheName) {
+          if ( CACHE_NAME != cacheName ) {
+            return caches.delete(cacheName);
+          }
+        })
+      );
+    })
+  );
+
 });
 
 // Intercept fetch requests and store them in the cache
@@ -29,4 +71,27 @@ self.addEventListener('fetch', function (event) {
    * TODO - Part 2 Step 4
    * Create a function as outlined above
    */
+   event.respondWith(
+    caches.match(event.request)
+      .then(function(response) {
+        if (response) {
+          return response;
+        }
+
+        return fetch(event.request).then(
+          function(response) {
+            if(!response || response.status !== 200 || response.type !== 'basic') {
+              return response;
+            }
+            var responseToCache = response.clone();
+            caches.open(CACHE_NAME)
+              .then(function(cache) {
+                cache.put(event.request, responseToCache);
+              });
+            return response;
+          }
+        );
+      })
+    );
+
 });
